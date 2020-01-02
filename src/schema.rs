@@ -188,7 +188,7 @@ impl<'a> From<&'a types::Value> for SchemaKind {
 ///
 /// More information about schema names can be found in the
 /// [Avro specification](https://avro.apache.org/docs/current/spec.html#names)
-#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Eq, Hash)]
 pub struct Name {
     pub name: String,
     pub namespace: Option<String>,
@@ -468,6 +468,39 @@ impl Schema {
     pub fn parse(value: &Value) -> AvroResult<Schema> {
         let mut parser = Parser::default();
         parser.parse(value)
+    }
+
+    pub fn is_protocol(input: &str) -> bool {
+        serde_json::from_str(input).ok().and_then(|v: Map<String, Value>| v.get("protocol").map(|_| ())).is_some()
+    }
+
+    /// Parses an avsc namespace file into a (Name, Schema) mapping
+    pub fn parse_protocol(input: &str) -> Result<HashMap<Name, Self>, Error> {
+        let value = serde_json::from_str(input)?;
+        match value {
+            Value::Object(ref data) => {
+                let ns: &Option<String> = &data.get("namespace").and_then(|namespace| {
+                    let value1 = namespace.clone();
+                    serde_json::from_value(value1).ok()
+                });
+                match data.get("types") {
+                    Some(Value::Array(ref data)) => {
+                        let ns_types: Result<HashMap<Name, Self>, Error> = data.into_iter().map(|t| {
+                            match t {
+                                Value::Object(ref data) => {
+                                    let name = Name::parse(data)?;
+                                    Self::parse(t).and_then(|s| Ok((Name { namespace: ns.clone(), ..name }, s)))
+                                }
+                                _ => Err(ParseSchemaError::new("each schema must be an object").into()),
+                            }
+                        }).collect();
+                        ns_types
+                    }
+                    _ => Err(ParseSchemaError::new("'types' must be an array'").into()),
+                }
+            }
+            _ => Err(ParseSchemaError::new("An avsc file must contain a single JSON object").into()),
+        }
     }
 }
 
