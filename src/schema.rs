@@ -21,8 +21,8 @@ pub struct ParseSchemaError(String);
 
 impl ParseSchemaError {
     pub fn new<S>(msg: S) -> ParseSchemaError
-    where
-        S: Into<String>,
+        where
+            S: Into<String>,
     {
         ParseSchemaError(msg.into())
     }
@@ -194,7 +194,7 @@ impl<'a> From<&'a types::Value> for SchemaKind {
 ///
 /// More information about schema names can be found in the
 /// [Avro specification](https://avro.apache.org/docs/current/spec.html#names)
-#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Eq, Hash)]
 pub struct Name {
     pub name: String,
     pub namespace: Option<String>,
@@ -390,6 +390,39 @@ impl PartialEq for UnionSchema {
 }
 
 impl Schema {
+    pub fn is_protocol(input: &str) -> bool {
+        serde_json::from_str(input).ok().and_then(|v: Map<String, Value>| v.get("protocol").map(|_| ())).is_some()
+    }
+
+    /// Parses an avsc namespace file into a (Name, Schema) mapping
+    pub fn parse_protocol(input: &str) -> Result<HashMap<Name, Self>, Error> {
+        let value = serde_json::from_str(input)?;
+        match value {
+            Value::Object(ref data) => {
+                let ns: &Option<String> = &data.get("namespace").and_then(|namespace| {
+                    let value1 = namespace.clone();
+                    serde_json::from_value(value1).ok()
+                });
+                match data.get("types") {
+                    Some(Value::Array(ref data)) => {
+                        let ns_types: Result<HashMap<Name, Self>, Error> = data.into_iter().map(|t| {
+                            match t {
+                                Value::Object(ref data) => {
+                                    let name = Name::parse(data)?;
+                                    Self::parse(t).and_then(|s| Ok((Name { namespace: ns.clone(), ..name }, s)))
+                                }
+                                _ => Err(ParseSchemaError::new("each schema must be an object").into()),
+                            }
+                        }).collect();
+                        ns_types
+                    }
+                    _ => Err(ParseSchemaError::new("'types' must be an array'").into()),
+                }
+            }
+            _ => Err(ParseSchemaError::new("An avsc file must contain a single JSON object").into()),
+        }
+    }
+
     /// Create a `Schema` from a string representing a JSON Avro schema.
     pub fn parse_str(input: &str) -> Result<Self, Error> {
         // TODO: (#82) this should be a ParseSchemaError wrapping the JSON error
@@ -577,8 +610,8 @@ impl Schema {
 
 impl Serialize for Schema {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+        where
+            S: Serializer,
     {
         match *self {
             Schema::Null => serializer.serialize_str("null"),
@@ -654,8 +687,8 @@ impl Serialize for Schema {
 
 impl Serialize for RecordField {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+        where
+            S: Serializer,
     {
         let mut map = serializer.serialize_map(None)?;
         map.serialize_entry("name", &self.name)?;
@@ -855,7 +888,7 @@ mod tests {
             }
         "#,
         )
-        .unwrap();
+            .unwrap();
 
         let mut lookup = HashMap::new();
         lookup.insert("a".to_owned(), 0);
