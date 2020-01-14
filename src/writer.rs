@@ -40,7 +40,7 @@ pub struct Writer<'a, W> {
     buffer: Vec<u8>,
     num_values: usize,
     codec: Codec,
-    marker: Vec<u8>,
+    pub marker: Vec<u8>,
     has_header: bool,
 }
 
