@@ -711,7 +711,7 @@ mod de;
 mod decimal;
 mod decode;
 mod duration;
-mod encode;
+pub mod encode;
 mod error;
 mod reader;
 mod ser;

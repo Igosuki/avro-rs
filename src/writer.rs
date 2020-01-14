@@ -11,7 +11,7 @@ use serde::Serialize;
 use std::{collections::HashMap, io::Write};
 
 const DEFAULT_BLOCK_SIZE: usize = 16000;
-const AVRO_OBJECT_HEADER: &[u8] = b"Obj\x01";
+pub const AVRO_OBJECT_HEADER: &[u8] = b"Obj\x01";
 
 /// Main interface for writing Avro formatted values.
 #[derive(typed_builder::TypedBuilder)]
