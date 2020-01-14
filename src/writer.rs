@@ -16,7 +16,7 @@ use crate::Codec;
 const SYNC_SIZE: usize = 16;
 const SYNC_INTERVAL: usize = 1000 * SYNC_SIZE; // TODO: parametrize in Writer
 
-const AVRO_OBJECT_HEADER: &[u8] = &[b'O', b'b', b'j', 1u8];
+pub const AVRO_OBJECT_HEADER: &[u8] = &[b'O', b'b', b'j', 1u8];
 
 /// Describes errors happened while validating Avro data.
 #[derive(Fail, Debug)]

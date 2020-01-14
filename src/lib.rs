@@ -468,7 +468,7 @@
 mod codec;
 mod de;
 mod decode;
-mod encode;
+pub mod encode;
 mod reader;
 mod ser;
 mod util;
