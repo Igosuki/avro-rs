@@ -29,7 +29,7 @@ pub struct Writer<'a, W> {
     #[builder(default = 0, setter(skip))]
     num_values: usize,
     #[builder(default = std::iter::repeat_with(random).take(16).collect(), setter(skip))]
-    marker: Vec<u8>,
+    pub marker: Vec<u8>,
     #[builder(default = false, setter(skip))]
     has_header: bool,
 }
