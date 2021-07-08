@@ -1179,3 +1179,35 @@ fn test_decimal_valid_type_attributes() {
     assert_eq!(0, bytes_decimal.get_attribute("scale"));
 }
 */
+
+#[test]
+/// Test that a protocol based schema is parsed and recognized as such
+fn test_parse_protocol() {
+    let schema_str = r#"{
+        "protocol" : "Simple",
+        "namespace" : "avrors",
+        "types": [{
+            "name": "A",
+            "type": "record",
+            "fields": [
+                {"name": "field_one", "type": "float"}
+            ]
+        },{
+            "name": "B",
+            "type": "fixed",
+            "size": 16
+        }]
+    }"#;
+    assert!(Schema::is_protocol(schema_str));
+    let schemas = Schema::parse_protocol(schema_str).expect("Failed to parse protocol");
+    for name in &["A", "B"] {
+        let mut name_key = Name::new(name);
+        name_key.namespace = Some("avrors".to_string());
+        assert!(
+            schemas.get(&name_key).is_some(),
+            "{} was not found in protocol schemas {:?}",
+            name,
+            schemas
+        );
+    }
+}
