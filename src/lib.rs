@@ -727,13 +727,13 @@ pub use codec::Codec;
 pub use de::from_value;
 pub use decimal::Decimal;
 pub use duration::{Days, Duration, Millis, Months};
+pub use encode::encode;
 pub use error::{Error, Error as DeError, Error as SerError};
 pub use reader::{from_avro_datum, Reader};
 pub use schema::Schema;
 pub use ser::to_value;
 pub use util::max_allocation_bytes;
 pub use writer::{to_avro_datum, Writer};
-pub use encode::encode;
 
 /// A convenience type alias for `Result`s with `Error`s.
 pub type AvroResult<T> = Result<T, Error>;

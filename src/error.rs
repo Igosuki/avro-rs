@@ -223,6 +223,9 @@ pub enum Error {
     #[error("Must be a JSON string, object or array")]
     ParseSchemaFromValidJson,
 
+    #[error("Failed to parse schema protocol : {0}")]
+    ParseSchemaProtocol(String),
+
     #[error("Unknown primitiive type: {0}")]
     ParsePrimitive(String),
 
