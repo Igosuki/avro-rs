@@ -711,7 +711,7 @@ mod de;
 mod decimal;
 mod decode;
 mod duration;
-pub mod encode;
+mod encode;
 mod error;
 mod reader;
 mod ser;
@@ -733,6 +733,7 @@ pub use schema::Schema;
 pub use ser::to_value;
 pub use util::max_allocation_bytes;
 pub use writer::{to_avro_datum, Writer};
+pub use encode::encode;
 
 /// A convenience type alias for `Result`s with `Error`s.
 pub type AvroResult<T> = Result<T, Error>;

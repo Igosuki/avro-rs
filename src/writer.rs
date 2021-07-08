@@ -29,7 +29,7 @@ pub struct Writer<'a, W> {
     #[builder(default = 0, setter(skip))]
     num_values: usize,
     #[builder(default = std::iter::repeat_with(random).take(16).collect(), setter(skip))]
-    pub marker: Vec<u8>,
+    marker: Vec<u8>,
     #[builder(default = false, setter(skip))]
     has_header: bool,
 }
@@ -250,6 +250,11 @@ impl<'a, W: Write> Writer<'a, W> {
     pub fn into_inner(mut self) -> AvroResult<W> {
         self.flush()?;
         Ok(self.writer)
+    }
+
+    /// Set the marker for this writer, useful for keeping a single writer and reusing markers
+    pub fn set_marker(&mut self, marker: Vec<u8>) {
+        self.marker = marker;
     }
 
     /// Generate and append synchronization marker to the payload.
