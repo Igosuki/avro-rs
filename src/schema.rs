@@ -444,17 +444,23 @@ impl Schema {
     pub fn parse_list(input: &[&str]) -> Result<Vec<Schema>, Error> {
         let mut input_schemas: HashMap<String, Value> = HashMap::with_capacity(input.len());
         let mut input_order: Vec<String> = Vec::with_capacity(input.len());
+        let mut protocol_schemas: Vec<Schema> = vec![];
         for js in input {
-            let schema: Value = serde_json::from_str(js).map_err(Error::ParseSchemaJson)?;
-            if let Value::Object(inner) = &schema {
-                let fullname = Name::parse(inner)?.fullname(None);
-                let previous_value = input_schemas.insert(fullname.clone(), schema);
-                if previous_value.is_some() {
-                    return Err(Error::NameCollision(fullname));
-                }
-                input_order.push(fullname);
+            if Self::is_protocol(js) {
+                let protocol = Schema::parse_protocol(js)?;
+                protocol_schemas.extend(protocol.values().into_iter().cloned());
             } else {
-                return Err(Error::GetNameField);
+                let schema: Value = serde_json::from_str(js).map_err(Error::ParseSchemaJson)?;
+                if let Value::Object(inner) = &schema {
+                    let fullname = Name::parse(inner)?.fullname(None);
+                    let previous_value = input_schemas.insert(fullname.clone(), schema);
+                    if previous_value.is_some() {
+                        return Err(Error::NameCollision(fullname));
+                    }
+                    input_order.push(fullname);
+                } else {
+                    return Err(Error::GetNameField);
+                }
             }
         }
         let mut parser = Parser {
@@ -462,7 +468,12 @@ impl Schema {
             input_order,
             parsed_schemas: HashMap::with_capacity(input.len()),
         };
-        parser.parse_list()
+        parser.parse_list().map(|v| {
+            let mut cons = vec![];
+            cons.extend(v);
+            cons.extend_from_slice(protocol_schemas.as_slice());
+            cons
+        })
     }
 
     pub fn parse(value: &Value) -> AvroResult<Schema> {
